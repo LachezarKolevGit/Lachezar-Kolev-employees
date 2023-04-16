@@ -1,9 +1,13 @@
 package bg.sirma.java.intern.employees.ui;
 
 import bg.sirma.java.intern.employees.employee.Employee;
+import bg.sirma.java.intern.employees.pair.Pair;
 import bg.sirma.java.intern.employees.projectmanager.ProjectManager;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 
 public class UI {
 
@@ -18,8 +22,13 @@ public class UI {
     }
 
     public void printData() {
-        List<Employee> pair = projectManager.findLongestWorkingPair();
+        Map<String, Pair> pairs = projectManager.createPairs();
+        Pair pair = projectManager.findLongestWorkingPair(pairs);
+        Map<String, List<LocalDate>> map = projectManager.getAllProjectsByPair(pair);
+
         System.out.println("Employee ID #1 | Employee ID #2 | Project ID | Days worked");
-        projectManager.getAllProjectsByPair(pair.get(0), pair.get(1));
+        for (Map.Entry<String, List<LocalDate>> entry : map.entrySet()){
+            System.out.println(pair.getEmployee1() + "           " + " " + pair.getEmployee2() + "         " + entry.getKey() + "         " + ChronoUnit.DAYS.between(entry.getValue().get(0), entry.getValue().get(1) ));
+        }
     }
 }

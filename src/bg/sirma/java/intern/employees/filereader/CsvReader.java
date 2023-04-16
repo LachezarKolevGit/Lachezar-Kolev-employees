@@ -96,7 +96,7 @@ public class CsvReader implements Reader {
             Employee employee = convertData(list);
             if (savedEmployees.containsKey(employee.getId())) {
                 Employee alreadySavedEmployee = savedEmployees.get(employee.getId());
-                Map<String, List<LocalDate>> projectWorkTime = employee.getProjectWorkTime();
+                Map<String, List<LocalDate>> projectWorkTime = employee.getProjectsToWorkTime();
                 for (Map.Entry<String, List<LocalDate>> entry : projectWorkTime.entrySet()) {
                     String newProjectId = entry.getKey();
                     List<LocalDate> workPeriod = entry.getValue();

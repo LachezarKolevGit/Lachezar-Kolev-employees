@@ -1,20 +1,19 @@
 package bg.sirma.java.intern.employees.employee;
 
 import java.time.LocalDate;
-import java.time.Period;
 import java.util.*;
 
 public class Employee {
     private final String id;
 
-    private final Map<String, List<LocalDate>> projectWorkTime;
+    private final Map<String, List<LocalDate>> projectsToWorkTime;
 
     public Employee(String id, String projectId, LocalDate startedWorkOn, LocalDate finishedWorkOn) {
         this.id = id;
-        projectWorkTime = new HashMap<>();
-        projectWorkTime.put(projectId, new ArrayList<>());
-        projectWorkTime.get(projectId).add(startedWorkOn);
-        projectWorkTime.get(projectId).add(finishedWorkOn);
+        projectsToWorkTime = new HashMap<>();
+        projectsToWorkTime.put(projectId, new ArrayList<>());
+        projectsToWorkTime.get(projectId).add(startedWorkOn);
+        projectsToWorkTime.get(projectId).add(finishedWorkOn);
     }
 
     public String getId() {
@@ -23,25 +22,38 @@ public class Employee {
 
     @Override
     public String toString() {
-        return "Employee{" +
-                "id='" + id + '\'' +
-                ", projectWorkTime=" + projectWorkTime +
-                '}';
+        return "id='" + id + '\'' ;
     }
 
-    public void addNewProject(String projectId, List<LocalDate> workPeriod){
-        projectWorkTime.put(projectId, new ArrayList<>());
-        for (LocalDate date : workPeriod){
-            projectWorkTime.get(projectId).add(date);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Employee employee = (Employee) o;
+        return Objects.equals(id, employee.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    public void addNewProject(String projectId, List<LocalDate> workPeriod) {
+        projectsToWorkTime.put(projectId, new ArrayList<>());
+        for (LocalDate date : workPeriod) {
+            projectsToWorkTime.get(projectId).add(date);
         }
     }
 
-    public Map<String, List<LocalDate>> getProjectWorkTime() {
-        return Collections.unmodifiableMap(projectWorkTime);
+    public Map<String, List<LocalDate>> getProjectsToWorkTime() {
+        return Collections.unmodifiableMap(projectsToWorkTime);
     }
 
-    public int getYearsSpentOnProject(String projectId) {
-        List<LocalDate> timePeriodList = projectWorkTime.get(projectId);
-        return Period.between(timePeriodList.get(0), timePeriodList.get(1)).getYears();
+    public LocalDate getStartingDate(String projectId) {
+        return projectsToWorkTime.get(projectId).get(0);
+    }
+
+    public LocalDate getEndDate(String projectId) {
+        return projectsToWorkTime.get(projectId).get(1);
     }
 }
