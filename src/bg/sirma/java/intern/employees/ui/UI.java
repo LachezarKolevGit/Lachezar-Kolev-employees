@@ -24,6 +24,7 @@ public class UI {
     public void printData() {
         Map<String, Pair> pairs = projectManager.createPairs();
         Pair pair = projectManager.findLongestWorkingPair(pairs);
+        System.out.println("Longest working together pair is :" + pair);
         Map<String, List<LocalDate>> map = projectManager.getAllProjectsByPair(pair);
 
         System.out.println("Employee ID #1 | Employee ID #2 | Project ID | Days worked");
