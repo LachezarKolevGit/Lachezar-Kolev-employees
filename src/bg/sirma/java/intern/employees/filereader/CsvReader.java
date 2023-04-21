@@ -1,5 +1,9 @@
 package bg.sirma.java.intern.employees.filereader;
 
+import bg.sirma.java.intern.employees.employee.EmployeeDTO;
+import bg.sirma.java.intern.employees.exceptions.InvalidRowException;
+import bg.sirma.java.intern.employees.exceptions.ProjectAlreadyAddedException;
+import bg.sirma.java.intern.employees.exceptions.StartDateAfterEndDateException;
 import bg.sirma.java.intern.employees.employee.Employee;
 
 import java.io.BufferedReader;
@@ -22,9 +26,9 @@ public class CsvReader implements Reader {
      * @return all rows read from the file
      */
     @Override
-    public List<List<String>> readFromFile() {
+    public List<List<String>> readFromFile() throws InvalidRowException {
         List<List<String>> records = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader("employees.csv"))) { //employees.csv
+        try (BufferedReader br = new BufferedReader(new FileReader("employees.csv"))) {
             String line;
             int counter = 0;
             while ((line = br.readLine()) != null) {
@@ -32,7 +36,11 @@ public class CsvReader implements Reader {
                     counter++;
                     continue;
                 }
+                counter++;
                 String[] values = line.split(COMMA_DELIMITER);
+                if (!validRow(values)) {
+                    throw new InvalidRowException("Row number: " + counter + " is not correctly formatted");
+                }
                 records.add(Arrays.asList(values));
             }
         } catch (IOException e) {
@@ -50,21 +58,27 @@ public class CsvReader implements Reader {
      * @return a Employee object
      */
     @Override
-    public Employee convertData(List<String> list) {
+    public EmployeeDTO convertData(List<String> list) throws StartDateAfterEndDateException {
         if (list == null || list.isEmpty()) {
             throw new IllegalArgumentException("Row can't be null or empty ");
         }
         Iterator<String> listIterator = list.listIterator();
         String employeeId = listIterator.next();
         String projectId = listIterator.next();
-        String startingDate = listIterator.next();
-        String endDate = listIterator.next();
+        String startingDateString = listIterator.next();
+        String endDateString = listIterator.next();
 
-        if (endDate.equals("null")) {
-            endDate = String.valueOf(LocalDate.now());
+        if (endDateString.equals("null")) {
+            endDateString = String.valueOf(LocalDate.now());
         }
 
-        return new Employee(employeeId, projectId, parseDateFormat(startingDate), parseDateFormat(endDate));
+        LocalDate startDate = parseDateFormat(startingDateString);
+        LocalDate endDate = parseDateFormat(endDateString);
+        if (endDate.isBefore(startDate)) {
+            throw new StartDateAfterEndDateException("Start date cannot be after end date");
+        }
+
+        return new EmployeeDTO(employeeId, projectId, startDate, endDate);
     }
 
     public LocalDate parseDateFormat(String date) {
@@ -90,23 +104,50 @@ public class CsvReader implements Reader {
      * @param records - all the rows read from the opened file
      */
     @Override
-    public List<Employee> getListOfEmployees(List<List<String>> records) {
+    public List<Employee> getListOfEmployees(List<List<String>> records) throws ProjectAlreadyAddedException {
+        if (records == null || records.isEmpty()) {
+            throw new IllegalArgumentException("Rows read from file are null or empty");
+        }
         Map<String, Employee> savedEmployees = new HashMap<>();  //returns employee based on id
-        for (List<String> list : records) {
-            Employee employee = convertData(list);
-            if (savedEmployees.containsKey(employee.getId())) {
-                Employee alreadySavedEmployee = savedEmployees.get(employee.getId());
-                Map<String, List<LocalDate>> projectWorkTime = employee.getProjectsToWorkTime();
-                for (Map.Entry<String, List<LocalDate>> entry : projectWorkTime.entrySet()) {
-                    String newProjectId = entry.getKey();
-                    List<LocalDate> workPeriod = entry.getValue();
-                    alreadySavedEmployee.addNewProject(newProjectId, workPeriod);
+        try {
+            for (List<String> list : records) {
+                EmployeeDTO employeeDTO = convertData(list);
+                if (savedEmployees.containsKey(employeeDTO.id())) {
+                    Employee alreadySavedEmployee = savedEmployees.get(employeeDTO.id());
+                    if (alreadySavedEmployee.getProjectsToWorkTime().containsKey(employeeDTO.projectId())) {
+                        throw new ProjectAlreadyAddedException("Duplicate project id is not allowed");
+                    }
+                    alreadySavedEmployee.addNewProject(employeeDTO.projectId(), List.of(employeeDTO.startOfWork(), employeeDTO.endOfWork()));
+                } else {
+                    savedEmployees.put(employeeDTO.id(),
+                            new Employee(employeeDTO.id(), employeeDTO.projectId(), employeeDTO.startOfWork(), employeeDTO.endOfWork()));
                 }
-            } else {
-                savedEmployees.put(employee.getId(), employee);
             }
+        } catch (StartDateAfterEndDateException e) {
+            System.err.println("Exception occurred " + e.getMessage());
+            e.printStackTrace();
         }
 
         return new ArrayList<>(savedEmployees.values());
     }
+
+    public boolean validRow(String[] values) {
+        String regexDate = "^(0[1-9]|[12][0-9]|3[01])[-/.](0[1-9]|1[012])[-/.](19|20)\\d\\d$|^(19|20)\\d\\d[-/.](0[1-9]|1[012])[-/.](0[1-9]|[12][0-9]|3[01])$";
+        String regexDateOrNull = "^(0[1-9]|[12][0-9]|3[01])[-/.](0[1-9]|1[012])[-/.](19|20)\\d\\d$|^(19|20)\\d\\d[-/.](0[1-9]|1[012])[-/.](0[1-9]|[12][0-9]|3[01])$|^null$";
+
+        if (!values[0].matches("[0-9]+")) {
+            return false;
+        }
+        if (!values[1].matches("[0-9]+")) {
+            return false;
+        }
+        if (!values[2].matches(regexDate)) {
+            return false;
+        }
+        if (!values[3].matches(regexDateOrNull)) {
+            return false;
+        }
+        return true;
+    }
 }
+

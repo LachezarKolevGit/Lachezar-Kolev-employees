@@ -50,7 +50,7 @@ public class Pair {
                 ", employee1=" + employee1 +
                 ", employee2=" + employee2 +
                 ", totalWorkTime=" + totalWorkTimeInMonths +
-                '}' + '\n';
+                " days}" + '\n';
     }
 
     public void addWorkTime(long workTimeToBeAdded) {

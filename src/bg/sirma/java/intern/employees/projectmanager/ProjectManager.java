@@ -47,10 +47,14 @@ public class ProjectManager {
     public Map<String, Pair> createPairs() {
         Map<Integer, Pair> hashToPair = new HashMap<>();
         Map<String, Pair> idToPair = new HashMap<>();
+
         int idCounter = 1;
         for (Map.Entry<String, List<Employee>> entry : projectsToEmployees.entrySet()) {
             String currentProjectIndex = entry.getKey();
             List<Employee> employeeList = entry.getValue();
+            if (employeeList.size() < 2) { // there is only one employee working on a project
+                continue;
+            }
             long workTime = calculatePairWorkTimeByYears(currentProjectIndex, employeeList.get(0), employeeList.get(1));
 
             int hashCode = employeeList.get(0).hashCode();
@@ -128,6 +132,6 @@ public class ProjectManager {
         LocalDate pairEndWorkDate = employee1EndDate.isBefore(employee2EndDate) ?
                 employee1EndDate : employee2EndDate;
 
-        return ChronoUnit.YEARS.between(pairStartWorkDate, pairEndWorkDate);
+        return ChronoUnit.DAYS.between(pairStartWorkDate, pairEndWorkDate);
     }
 }
